@@ -2,10 +2,9 @@
 import {useEffect, useState} from 'react';
 import Pagination from '@mui/material/Pagination';
 import Box from '@mui/material/Box';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import Typography from '@mui/material/Typography';
-import type {Consent} from '../app/api/consents/route';
+import ConsentsTable from './ConsentsTable';
+import {getConsents, Consent} from '@/services/consents';
 
 const PAGE_SIZE = 2;
 
@@ -14,14 +13,19 @@ export default function ConsentsListWithPagination() {
     const [data, setData] = useState<Consent[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         setLoading(true);
-        fetch(`/api/consents?page=${page}&pageSize=${PAGE_SIZE}`)
-            .then((res) => res.json())
-            .then((json) => {
-                setData(json.data);
-                setTotal(json.total);
+        setError(null);
+        getConsents(page, PAGE_SIZE)
+            .then(({data, total}) => {
+                setData(data);
+                setTotal(total);
+                setLoading(false);
+            })
+            .catch((err) => {
+                setError(err.message);
                 setLoading(false);
             });
     }, [page]);
@@ -35,15 +39,10 @@ export default function ConsentsListWithPagination() {
             </Typography>
             {loading ? (
                 <Typography>Loading...</Typography>
+            ) : error ? (
+                <Typography color='error'>{error}</Typography>
             ) : (
-                <List>
-                    {data.map((consent, idx) => (
-                        <ListItem key={idx} divider>
-                            <strong>{consent.name}</strong> - {consent.email} -{' '}
-                            {consent.consentGivenFor.join(', ')}
-                        </ListItem>
-                    ))}
-                </List>
+                <ConsentsTable consents={data} />
             )}
             <Box display='flex' justifyContent='center' mt={2}>
                 <Pagination

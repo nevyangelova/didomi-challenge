@@ -1,36 +1,53 @@
 'use client';
-import Link from 'next/link';
+
+import Box from '@mui/material/Box';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import Button from '@mui/material/Button';
 
 const navItems = [
-    {label: 'Give consent', href: '/#give-consent'},
-    {label: 'Collected consents', href: '/#collected-consents'},
+    {label: 'Give consent', key: 'give-consent'},
+    {label: 'Collected consents', key: 'collected-consents'},
 ];
 
-export default function Sidebar() {
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+export default function Sidebar({
+    activeTab,
+    onTabChange,
+}: {
+    activeTab: string;
+    onTabChange: (tab: string) => void;
+}) {
     return (
-        <nav style={{width: 200, borderRight: '1px solid #ccc', padding: 16}}>
-            <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
+        <Box sx={{width: 200, borderRight: '1px solid #ccc', p: 2}}>
+            <List sx={{p: 0, m: 0}}>
                 {navItems.map((item) => (
-                    <li key={item.href}>
-                        <Link
-                            href={item.href}
-                            style={{
-                                display: 'block',
-                                padding: '12px 8px',
-                                background: hash === item.href.replace('/','') ? '#e3f0ff' : 'transparent',
-                                fontWeight: hash === item.href.replace('/','') ? 'bold' : 'normal',
+                    <ListItem key={item.key} disablePadding sx={{mb: 0.5}}>
+                        <Button
+                            fullWidth
+                            onClick={() => onTabChange(item.key)}
+                            sx={{
+                                backgroundColor:
+                                    activeTab === item.key
+                                        ? '#e3f0ff'
+                                        : 'transparent',
+                                fontWeight:
+                                    activeTab === item.key ? 'bold' : 'normal',
                                 color: '#222',
-                                textDecoration: 'none',
-                                borderRadius: 4,
-                                marginBottom: 4,
+                                borderRadius: 1,
+                                textTransform: 'none',
+                                px: 2,
+                                py: 1.5,
+                                '&:hover': {
+                                    backgroundColor: '#e3f0ff',
+                                    boxShadow: 'none',
+                                },
                             }}
                         >
                             {item.label}
-                        </Link>
-                    </li>
+                        </Button>
+                    </ListItem>
                 ))}
-            </ul>
-        </nav>
+            </List>
+        </Box>
     );
 }

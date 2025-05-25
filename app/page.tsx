@@ -1,5 +1,6 @@
 'use client';
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
+import Box from '@mui/material/Box';
 import Sidebar from '../components/Sidebar';
 import ConsentsListWithPagination from '../components/ConsentsListWithPagination';
 import GiveConsentForm from '../components/GiveConsentForm';
@@ -7,26 +8,18 @@ import GiveConsentForm from '../components/GiveConsentForm';
 export default function HomePage() {
     const [tab, setTab] = useState('give-consent');
 
-    useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash.replace('#', '');
-            setTab(hash || 'give-consent');
-        };
-        handleHashChange();
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
-    }, []);
-
     return (
-        <div style={{display: 'flex', minHeight: '100vh'}}>
-            <Sidebar />
-            <main style={{flex: 1, padding: 32}}>
+        <Box sx={{display: 'flex', minHeight: '100vh'}}>
+            <Sidebar activeTab={tab} onTabChange={setTab} />
+            <Box component='main' sx={{flex: 1, p: 4}}>
                 {tab === 'give-consent' ? (
-                    <GiveConsentForm onSuccess={() => { window.location.hash = 'collected-consents'; }} />
+                    <GiveConsentForm
+                        onSuccess={() => setTab('collected-consents')}
+                    />
                 ) : (
                     <ConsentsListWithPagination />
                 )}
-            </main>
-        </div>
+            </Box>
+        </Box>
     );
 }
