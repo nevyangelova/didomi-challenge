@@ -1,6 +1,5 @@
 'use client';
 import Link from 'next/link';
-import {usePathname} from 'next/navigation';
 
 const navItems = [
     {label: 'Give consent', href: '/#give-consent'},
@@ -8,7 +7,7 @@ const navItems = [
 ];
 
 export default function Sidebar() {
-    const pathname = usePathname();
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
     return (
         <nav style={{width: 200, borderRight: '1px solid #ccc', padding: 16}}>
             <ul style={{listStyle: 'none', padding: 0, margin: 0}}>
@@ -19,12 +18,8 @@ export default function Sidebar() {
                             style={{
                                 display: 'block',
                                 padding: '12px 8px',
-                                background:
-                                    pathname === item.href
-                                        ? '#e3f0ff'
-                                        : 'transparent',
-                                fontWeight:
-                                    pathname === item.href ? 'bold' : 'normal',
+                                background: hash === item.href.replace('/','') ? '#e3f0ff' : 'transparent',
+                                fontWeight: hash === item.href.replace('/','') ? 'bold' : 'normal',
                                 color: '#222',
                                 textDecoration: 'none',
                                 borderRadius: 4,
