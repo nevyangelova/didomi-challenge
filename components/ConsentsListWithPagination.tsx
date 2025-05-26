@@ -4,7 +4,8 @@ import Pagination from '@mui/material/Pagination';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import ConsentsTable from './ConsentsTable';
-import {getConsents, Consent} from '@/services/consents';
+import {getConsents} from '@/services/consents';
+import {Consent} from '@/types/consents';
 
 const PAGE_SIZE = 2;
 
@@ -34,9 +35,6 @@ export default function ConsentsListWithPagination() {
 
     return (
         <Box>
-            <Typography variant='h5' gutterBottom>
-                Collected Consents
-            </Typography>
             {loading ? (
                 <Typography>Loading...</Typography>
             ) : error ? (

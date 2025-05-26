@@ -1,107 +1,153 @@
 import {useState} from 'react';
-
-const CONSENT_OPTIONS = [
-    'Receive newsletter',
-    'Be shown targeted ads',
-    'Contribute to anonymous visit statistics',
-];
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
+import Typography from '@mui/material/Typography';
+import FormHelperText from '@mui/material/FormHelperText';
+import {addConsent} from '../services/consents';
+import {CONSENT_OPTIONS} from '../constants/consents';
+import {ConsentFormSchema, ConsentFormType} from '../types/consents';
 
 export default function GiveConsentForm({onSuccess}: {onSuccess: () => void}) {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [consents, setConsents] = useState<string[]>([]);
+    // Using local state here is idiomatic for a single, self-contained form.
+    const [form, setForm] = useState<ConsentFormType>({
+        name: '',
+        email: '',
+        consentGivenFor: [],
+    });
     const [submitting, setSubmitting] = useState(false);
+    const [errors, setErrors] = useState<{[k: string]: string}>({});
 
-    const handleCheckbox = (option: string) => {
-        setConsents((prev) =>
-            prev.includes(option)
-                ? prev.filter((c) => c !== option)
-                : [...prev, option]
-        );
+    // The flat state object pattern is easy to update, and avoids prop-drilling or unnecessary context.
+    const handleChange = (
+        field: keyof ConsentFormType,
+        value: string | string[]
+    ) => {
+        setForm((prev) => ({...prev, [field]: value}));
     };
 
+    // Using a functional update to the state ensures we always work with the latest state, which is important in concurrent React.
+    const handleCheckbox = (option: string) => {
+        setForm((prev) => {
+            const exists = prev.consentGivenFor.includes(option);
+            return {
+                ...prev,
+                consentGivenFor: exists
+                    ? prev.consentGivenFor.filter((c) => c !== option)
+                    : [...prev.consentGivenFor, option],
+            };
+        });
+    };
+
+    /**
+     * validate runs the Zod schema validation on the current form state.
+     * This provides robust validation and clear error messages.
+     * The schema is defined in a separate file (types/consents.ts) to promote reusability and consistency.
+     */
+    const validate = () => {
+        const result = ConsentFormSchema.safeParse(form);
+        if (!result.success) {
+            const fieldErrors: {[k: string]: string} = {};
+            for (const err of result.error.errors) {
+                if (err.path[0]) fieldErrors[err.path[0]] = err.message;
+            }
+            setErrors(fieldErrors);
+            return false;
+        }
+        setErrors({});
+        return true;
+    };
+
+    /**
+     * After a successful submit, we call onSuccess to let the parent know to switch tabs or show a message.
+     * The button is disabled while submitting to prevent double submissions.
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validate()) return;
         setSubmitting(true);
-        await fetch('/api/consents', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name, email, consentGivenFor: consents}),
-        });
+        await addConsent(form);
         setSubmitting(false);
         onSuccess();
     };
 
-    const isValid = name && email && consents.length > 0;
+    // Compute form validity using Zod. This ensures the submit button is only enabled when the form is valid.
+    const isFormValid = ConsentFormSchema.safeParse(form).success;
 
     return (
-        <form
+        <Paper
+            sx={{p: 3, borderRadius: 2, maxWidth: 600, textAlign: 'center'}}
+            elevation={2}
+            component='form'
             onSubmit={handleSubmit}
-            style={{
-                border: '1px solid #ccc',
-                borderRadius: 8,
-                padding: 24,
-                maxWidth: 400,
-            }}
         >
-            <h2>Give Consent</h2>
-            <div style={{display: 'flex', gap: 8, marginBottom: 16}}>
-                <input
-                    type='text'
-                    placeholder='Name'
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    style={{flex: 1, padding: 8}}
+            <Box display='flex' gap={1} mb={2}>
+                <TextField
+                    label='Name'
+                    value={form.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    onBlur={validate}
+                    error={!!errors.name}
+                    helperText={errors.name}
+                    fullWidth
+                    size='small'
                     required
                 />
-                <input
-                    type='email'
-                    placeholder='Email address'
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    style={{flex: 1, padding: 8}}
+                <TextField
+                    label='Email address'
+                    value={form.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    onBlur={validate}
+                    error={!!errors.email}
+                    helperText={errors.email}
+                    fullWidth
+                    size='small'
                     required
                 />
-            </div>
-            <div style={{marginBottom: 8}}>I agree to:</div>
-            <div
-                style={{
+            </Box>
+            <Typography mb={1}>I agree to:</Typography>
+            <Box
+                sx={{
                     border: '1px solid #bbb',
-                    borderRadius: 6,
-                    padding: 12,
-                    marginBottom: 16,
+                    borderRadius: 1.5,
+                    p: 1.5,
+                    mb: 2,
+                    maxWidth: 400,
+                    textAlign: 'left',
+                    margin: '1rem auto',
                 }}
             >
                 {CONSENT_OPTIONS.map((option) => (
-                    <div key={option}>
-                        <label>
-                            <input
-                                type='checkbox'
-                                checked={consents.includes(option)}
+                    <FormControlLabel
+                        key={option}
+                        control={
+                            <Checkbox
+                                checked={form.consentGivenFor.includes(option)}
                                 onChange={() => handleCheckbox(option)}
-                            />{' '}
-                            {option}
-                        </label>
-                    </div>
+                                onBlur={validate}
+                            />
+                        }
+                        label={option}
+                    />
                 ))}
-            </div>
-            <button
+                {errors.consentGivenFor && (
+                    <FormHelperText error>
+                        {errors.consentGivenFor}
+                    </FormHelperText>
+                )}
+            </Box>
+            <Button
                 type='submit'
-                disabled={!isValid || submitting}
-                style={{
-                    background: '#0094ff',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 6,
-                    padding: '12px 32px',
-                    fontWeight: 600,
-                    fontSize: 18,
-                    cursor: isValid && !submitting ? 'pointer' : 'not-allowed',
-                    width: '100%',
-                }}
+                variant='contained'
+                color='primary'
+                disabled={submitting || !isFormValid}
+                sx={{fontWeight: 600, fontSize: 18, py: 1.5, borderRadius: 1}}
             >
                 Give consent
-            </button>
-        </form>
+            </Button>
+        </Paper>
     );
 }
