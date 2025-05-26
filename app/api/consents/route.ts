@@ -1,11 +1,14 @@
+// This file implements a mock REST API for consents, as required by the challenge specification.
+// Requirements addressed:
+// - Expose GET /consents - Returns a paginated list of consents
+// - Expose POST /consents -  Adds a new consent to the list
+// - Use in-memory storage (no real DB), pre-populated with sample data
+// - No real HTTP calls are sent out as this is a local mock API for the frontend
+// - Pagination is handled server-side for realism and to match the product spec
 import {NextRequest, NextResponse} from 'next/server';
+import {Consent, ConsentFormSchema} from '@/types/consents';
 
-export type Consent = {
-    name: string;
-    email: string;
-    consentGivenFor: string[];
-};
-
+// In-memory storage for consents. This is reset on every server restart, which is acceptable for a mock/demo.
 let consents: Consent[] = [
     {
         name: 'Bojack Horseman',
@@ -42,6 +45,12 @@ let consents: Consent[] = [
     },
 ];
 
+/**
+ * GET /api/consents
+ * Returns a paginated list of consents.
+ * Accepts page and pageSize query params for pagination.
+ * This matches the challenge requirement for a paginated GET endpoint.
+ */
 export async function GET(req: NextRequest) {
     const {searchParams} = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -57,13 +66,23 @@ export async function GET(req: NextRequest) {
     });
 }
 
+/**
+ * POST /api/consents
+ * Adds a new consent to the in-memory list.
+ * This matches the challenge requirement for a POST endpoint to add consents.
+ * In a real app, validation and persistence would be added here.
+ */
 export async function POST(req: NextRequest) {
     const body = await req.json();
-    const consent: Consent = {
-        name: body.name,
-        email: body.email,
-        consentGivenFor: body.consentGivenFor,
-    };
+    // for this example we can reuse the Zod validation schema from the frontend
+    const result = ConsentFormSchema.safeParse(body);
+    if (!result.success) {
+        return NextResponse.json(
+            { error: 'Invalid input', details: result.error.errors },
+            { status: 400 }
+        );
+    }
+    const consent = result.data;
     consents.push(consent);
-    return NextResponse.json(consent, {status: 201});
+    return NextResponse.json(consent, { status: 201 });
 }

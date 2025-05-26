@@ -1,9 +1,20 @@
-export type Consent = {
-    name: string;
-    email: string;
-    consentGivenFor: string[];
-};
+// Service abstraction for consent-related API calls.
+// This layer centralizes all HTTP requests related to consents, providing a single source of truth for data fetching and mutation.
+// Separation of concerns: Keeps API logic out of UI components.
+// Reusability: Functions here can be reused across multiple components, hooks, or even server-side code.
+// Maintainability: If the API changes, you only need to update this file.
+// Testability: Easier to mock API calls in tests by mocking this service layer.
+// Scalability: As the app grows, data access is consistent.
 
+import {Consent} from '@/types/consents';
+
+/**
+ * Fetches a paginated list of consents from the API.
+ * @param page - The page number to fetch (default: 1)
+ * @param pageSize - The number of items per page (default: 2)
+ * @returns An object containing the data, total count, current page, and page size.
+ * Throws an error if the request fails.
+ */
 export async function getConsents(
     page = 1,
     pageSize = 2
@@ -18,6 +29,12 @@ export async function getConsents(
     return res.json();
 }
 
+/**
+ * Adds a new consent by sending a POST request to the API.
+ * @param consent - The consent object to add.
+ * @returns The created consent object as returned by the API.
+ * Throws an error if the request fails.
+ */
 export async function addConsent(consent: Consent): Promise<Consent> {
     const res = await fetch('/api/consents', {
         method: 'POST',
