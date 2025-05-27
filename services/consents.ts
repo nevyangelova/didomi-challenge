@@ -7,6 +7,7 @@
 // Scalability: As the app grows, data access is consistent.
 
 import {Consent} from '@/types/consents';
+export type {Consent} from '@/types/consents';
 
 /**
  * Fetches a paginated list of consents from the API.
@@ -24,7 +25,7 @@ export async function getConsents(
     page: number;
     pageSize: number;
 }> {
-    const res = await fetch(`/api/consents?page=${page}&pageSize=${pageSize}`);
+    const res = await fetch(`http://localhost:3000/api/consents?page=${page}&pageSize=${pageSize}`);
     if (!res.ok) throw new Error('Failed to fetch consents');
     return res.json();
 }
@@ -36,7 +37,7 @@ export async function getConsents(
  * Throws an error if the request fails.
  */
 export async function addConsent(consent: Consent): Promise<Consent> {
-    const res = await fetch('/api/consents', {
+    const res = await fetch('http://localhost:3000/api/consents', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(consent),

@@ -1,25 +1,14 @@
-'use client';
-import {useState} from 'react';
-import Box from '@mui/material/Box';
-import Sidebar from '../components/Sidebar';
-import ConsentsListWithPagination from '../components/ConsentsListWithPagination';
-import GiveConsentForm from '../components/GiveConsentForm';
+import { getConsents } from '@/services/consents';
+import { ConsentsProvider } from '@/contexts/ConsentsContext';
+import HomeTabs from '@/components/HomeTabs';
 
-export default function HomePage() {
-    const [tab, setTab] = useState('give-consent');
+export default async function HomePage() {
+    // SSR fetch for the first page of consents to avoid flickering
+    const { data, total } = await getConsents(1, 2);
 
     return (
-        <Box sx={{display: 'flex', minHeight: '100vh'}}>
-            <Sidebar activeTab={tab} onTabChange={setTab} />
-            <Box component='main' sx={{flex: 1, p: 4}}>
-                {tab === 'give-consent' ? (
-                    <GiveConsentForm
-                        onSuccess={() => setTab('collected-consents')}
-                    />
-                ) : (
-                    <ConsentsListWithPagination />
-                )}
-            </Box>
-        </Box>
+        <ConsentsProvider initialPage={1} initialData={{ 1: data }} initialTotal={total}>
+            <HomeTabs />
+        </ConsentsProvider>
     );
 }

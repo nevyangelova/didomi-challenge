@@ -1,44 +1,55 @@
 'use client';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef} from 'react';
 import Pagination from '@mui/material/Pagination';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import ConsentsTable from './ConsentsTable';
-import {getConsents} from '@/services/consents';
-import {Consent} from '@/types/consents';
-
-const PAGE_SIZE = 2;
+import {useConsentsContext} from '@/contexts/ConsentsContext';
+import CircularProgress from '@mui/material/CircularProgress';
 
 export default function ConsentsListWithPagination() {
-    const [page, setPage] = useState(1);
-    const [data, setData] = useState<Consent[]>([]);
-    const [total, setTotal] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        page,
+        setPage,
+        pageSize,
+        consentsCache,
+        total,
+        loading,
+        error,
+        fetchPage,
+    } = useConsentsContext();
+
+    // Keep track of the last available data to show while loading and avoid page flickering
+    const lastDataRef = useRef(consentsCache[page] || []);
+    const data = consentsCache[page] || lastDataRef.current;
+    useEffect(() => {
+        if (consentsCache[page]) {
+            lastDataRef.current = consentsCache[page];
+        }
+    }, [consentsCache, page]);
 
     useEffect(() => {
-        setLoading(true);
-        setError(null);
-        getConsents(page, PAGE_SIZE)
-            .then(({data, total}) => {
-                setData(data);
-                setTotal(total);
-                setLoading(false);
-            })
-            .catch((err) => {
-                setError(err.message);
-                setLoading(false);
-            });
-    }, [page]);
+        if (!consentsCache[page]) {
+            fetchPage(page);
+        }
+    }, [page, consentsCache, fetchPage]);
 
-    const pageCount = Math.ceil(total / PAGE_SIZE);
+    const pageCount = Math.ceil(total / pageSize);
+    const isInitialPage = page === 1;
+    const showInitialLoading = isInitialPage && loading && !consentsCache[1];
 
     return (
-        <Box>
-            {loading ? (
-                <Typography>Loading...</Typography>
-            ) : error ? (
-                <Typography color='error'>{error}</Typography>
+        <Box sx={{position: 'relative'}}>
+            {error && <Typography color='error'>{error}</Typography>}
+            {showInitialLoading ? (
+                <Box
+                    display='flex'
+                    justifyContent='center'
+                    alignItems='center'
+                    minHeight={200}
+                >
+                    <CircularProgress />
+                </Box>
             ) : (
                 <ConsentsTable consents={data} />
             )}
