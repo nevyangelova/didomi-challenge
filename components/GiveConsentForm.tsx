@@ -10,8 +10,14 @@ import FormHelperText from '@mui/material/FormHelperText';
 import {addConsent} from '../services/consents';
 import {CONSENT_OPTIONS} from '../constants/consents';
 import {ConsentFormSchema, ConsentFormType} from '../types/consents';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import {useTheme} from '@mui/material/styles';
+import {useConsentsContext} from '@/contexts/ConsentsContext';
 
 export default function GiveConsentForm({onSuccess}: {onSuccess: () => void}) {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const {refreshAndGoToLastPage} = useConsentsContext();
     // Using local state here is idiomatic for a single, self-contained form.
     const [form, setForm] = useState<ConsentFormType>({
         name: '',
@@ -64,14 +70,19 @@ export default function GiveConsentForm({onSuccess}: {onSuccess: () => void}) {
     /**
      * After a successful submit, we call onSuccess to let the parent know to switch tabs or show a message.
      * The button is disabled while submitting to prevent double submissions.
+     * Also we need to refresh the list after adding an new consent to display to the user.
      */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validate()) return;
         setSubmitting(true);
-        await addConsent(form);
-        setSubmitting(false);
-        onSuccess();
+        try {
+            await addConsent(form);
+            await refreshAndGoToLastPage();
+            onSuccess();
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     // Compute form validity using Zod. This ensures the submit button is only enabled when the form is valid.
@@ -79,12 +90,23 @@ export default function GiveConsentForm({onSuccess}: {onSuccess: () => void}) {
 
     return (
         <Paper
-            sx={{p: 3, borderRadius: 2, maxWidth: 600, textAlign: 'center'}}
+            sx={{
+                p: {xs: 2, sm: 3},
+                borderRadius: 2,
+                maxWidth: 600,
+                textAlign: 'center',
+                mx: {xs: 2, sm: 'auto'},
+            }}
             elevation={2}
             component='form'
             onSubmit={handleSubmit}
         >
-            <Box display='flex' gap={1} mb={2}>
+            <Box
+                display='flex'
+                flexDirection={{xs: 'column', sm: 'row'}}
+                gap={1}
+                mb={2}
+            >
                 <TextField
                     label='Name'
                     value={form.name}
@@ -113,7 +135,7 @@ export default function GiveConsentForm({onSuccess}: {onSuccess: () => void}) {
                 sx={{
                     border: '1px solid #bbb',
                     borderRadius: 1.5,
-                    p: 1.5,
+                    p: {xs: 1, sm: 1.5},
                     mb: 2,
                     maxWidth: 400,
                     textAlign: 'left',
@@ -128,9 +150,16 @@ export default function GiveConsentForm({onSuccess}: {onSuccess: () => void}) {
                                 checked={form.consentGivenFor.includes(option)}
                                 onChange={() => handleCheckbox(option)}
                                 onBlur={validate}
+                                size={isMobile ? 'small' : 'medium'}
                             />
                         }
                         label={option}
+                        sx={{
+                            fontSize: {xs: '0.875rem', sm: '1rem'},
+                            '& .MuiFormControlLabel-label': {
+                                fontSize: 'inherit',
+                            },
+                        }}
                     />
                 ))}
                 {errors.consentGivenFor && (
@@ -144,7 +173,13 @@ export default function GiveConsentForm({onSuccess}: {onSuccess: () => void}) {
                 variant='contained'
                 color='primary'
                 disabled={submitting || !isFormValid}
-                sx={{fontWeight: 600, fontSize: 18, py: 1.5, borderRadius: 1}}
+                sx={{
+                    fontWeight: 600,
+                    fontSize: {xs: 16, sm: 18},
+                    py: {xs: 1, sm: 1.5},
+                    px: {xs: 2, sm: 3},
+                    borderRadius: 1,
+                }}
             >
                 Give consent
             </Button>
