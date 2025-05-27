@@ -6,7 +6,7 @@
  * 3. Shared Logic: Pagination, loading states, and error handling
  * 4. SSR Integration: We can hydrate the context with server-side data while keeping client-side updates
  * 5. Performance: Prevents prop drilling and unnecessary re-renders
- * 
+ *
  * Alternative Approaches Considered:
  * - Redux: Overkill for this simple state management
  * - React Query: Could work but adds complexity for simple pagination
@@ -15,7 +15,8 @@
  */
 
 import React, {createContext, useContext, useState, useCallback} from 'react';
-import {getConsents, Consent} from '@/services/consents';
+import {getConsents} from '@/services/consents';
+import {Consent} from '@/types/consents';
 
 /**
  * Context Type Definition
@@ -44,12 +45,12 @@ const ConsentsContext = createContext<ConsentsContextType | undefined>(
 
 /**
  * ConsentsProvider
- * 
+ *
  * Props:
  * - initialPage: Starting page
  * - initialData: SSR data to hydrate the cache
  * - initialTotal: Total count from SSR
- * 
+ *
  * Why these props?
  * - Enables SSR hydration while maintaining client-side updates
  * - Allows testing with mock data
@@ -84,7 +85,7 @@ export function ConsentsProvider({
      * 2. Loading States: Manages loading and error states
      * 3. Cache Update: Updates cache with new data
      * 4. Total Update: Keeps total count in sync
-     * 
+     *
      * Why useCallback?
      * - Prevents unnecessary re-renders
      * - Stable reference for dependencies
@@ -117,17 +118,17 @@ export function ConsentsProvider({
 
     /**
      * refreshAndGoToLastPage
-     * 
+     *
      * Why this special function?
      * 1. UX: When adding a consent, user expects to see it immediately
      * 2. Data Consistency: Need to update total count and fetch latest page
      * 3. Navigation: Automatically go to the page where new consent appears
-     * 
+     *
      * Implementation Details:
      * 1. First fetch total to calculate last page
      * 2. Then fetch last page's data
      * 3. Update cache and current page
-     * 
+     *
      * Why not just refresh current page?
      * - New consent might be on a different page
      * - User expects to see their new consent
@@ -139,11 +140,11 @@ export function ConsentsProvider({
             // Get fresh total to calculate last page
             const {total: newTotal} = await getConsents(1, pageSize);
             setTotal(newTotal);
-            
+
             // Calculate and fetch last page
             const lastPage = Math.ceil(newTotal / pageSize);
             const {data} = await getConsents(lastPage, pageSize);
-            
+
             // Update cache and current page
             setConsentsCache((prev) => ({...prev, [lastPage]: data}));
             setPage(lastPage);

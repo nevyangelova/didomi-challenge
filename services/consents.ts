@@ -7,7 +7,6 @@
 // Scalability: As the app grows, data access is consistent.
 
 import {Consent} from '@/types/consents';
-export type {Consent} from '@/types/consents';
 
 // Get API URL from environment variable with fallback for development
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
