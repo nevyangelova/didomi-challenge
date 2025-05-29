@@ -1,4 +1,4 @@
-# Didomi Consent Management Challenge
+# Consent Management App
 
 This project is a consent management app built with **Next.js 15** and **Material UI (MUI)**. It demonstrates scalable, real-world patterns for data fetching, state management, SSR, and mobile responsiveness.
 
